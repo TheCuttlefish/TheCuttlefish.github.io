@@ -1,6 +1,6 @@
-$(document).ready(function(){
+$(function(){
 
-
+  $(".footer .rights").load("footer.html");
 
     //mobile menu toggling
     $("#menu_icon").click(function(){
@@ -9,7 +9,7 @@ $(document).ready(function(){
         return false;
     });
 
-    
+
 
     //Contact Page Map Centering
     var hw = $('header').width() + 50;
@@ -28,7 +28,7 @@ $(document).ready(function(){
         });
     }
 
-   
+
 
 
 
@@ -38,13 +38,13 @@ $(document).ready(function(){
         var attr_title = $(this).attr("data-title");
 
         if( attr_title == undefined || attr_title == "") return false;
-        
+
         $(this).after('<span class="tooltip"></span>');
 
         var tooltip = $(".tooltip");
         tooltip.append($(this).data('title'));
 
-         
+
         var tipwidth = tooltip.outerWidth();
         var a_width = $(this).width();
         var a_hegiht = $(this).height() + 3 + 4;
@@ -62,19 +62,14 @@ $(document).ready(function(){
         }).stop().animate({
             opacity : 1
         }, 200);
-       
+
 
     });
 
     $("a").mouseout(function(){
-        var tooltip = $(".tooltip");       
+        var tooltip = $(".tooltip");
         tooltip.remove();
     });
 
 
 });
-
-
-
-
-
