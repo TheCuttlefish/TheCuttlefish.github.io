@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>ENDLINE | 2017</title>
+
+    <!-- css -->
+    <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+	<link href="css/nivo-lightbox.css" rel="stylesheet" />
+	<link href="css/nivo-lightbox-theme/default/default.css" rel="stylesheet" type="text/css" />
+	<link href="css/animate.css" rel="stylesheet" />
+    <link href="css/style.css" rel="stylesheet">
+
+	<!-- template skin -->
+	<link id="t-colors" href="color/default.css" rel="stylesheet">
+
+    <!-- =======================================================
+        Theme Name: Appland
+        Theme URL: https://bootstrapmade.com/free-bootstrap-app-landing-page-template/
+        Author: BootstrapMade
+        Author URL: https://bootstrapmade.com
+    ======================================================= -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<!-- =======================================================
+      Google analytics
+  ======================================================= -->
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-104402965-1', 'auto');
+      ga('send', 'pageview');
+
+    </script>
+
+
+
+
+
+
+</head>
+
+<body id="page-top" data-spy="scroll" data-target=".navbar-custom">
+
+<div id="wrapper">
+
+    <nav class="navbar navbar-custom" role="navigation">
+        <div class="container navigation">
+
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-main-collapse">
+                    <i class="fa fa-bars"></i>
+                </button>
+                <a class="navbar-brand" href="index.html">
+                    <img src="img/logo.png" alt="" width="150" height="40" />
+                </a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse navbar-right navbar-main-collapse">
+			  <ul class="nav navbar-nav">
+				<li><div id="cart"></div></li>
+				 <!--
+				 Zhan uncommented these 2 lines
+					<li class="active"><a href="#intro">Home</a></li>
+					<li><a href="#">Store location <span class="label label-danger">65</span></a> </li>
+				-->
+			  </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+
+        </div>
+        <!-- /.container -->
+    </nav>
+
+	<!-- Section: intro -->
+    <section id="intro" class="intro">
+		<div class="intro-content">
+			<div class="container">
+
+				<div class="row">
+					<div class="col-sm-6 col-md-6 col-lg-6">
+					<div class="wow fadeInDown" data-wow-offset="0" data-wow-delay="0.1s">
+						<img src="img/iphone.png" class="img-responsive" alt="" />
+
+					</div>
+					</div>
+					<div class="col-sm-6 col-md-6 col-lg-6 slogan">
+						<div class="wow fadeInUp" data-wow-duration="2s" data-wow-delay="0.2s">
+						<h2>About Endline</h2>
+						<p>
+						Endline is a game, where the player has to tap on lines in specific order to complete as many levels as possible. The game offers a variety of quirky levels and challenges.
+						</p>
+						<p>
+						The game is currently under development, and will be released in the August. You can contribute to its development by playing a browser version and giving us your feedback.
+            </p>
+
+            <p>
+              Endline is made by Zhan Gurskis & Rodrigo Hamuy
+            </p>
+						</div>
+						<div class="buttons">
+						<a href="https://play.google.com/store/apps/details?id=air.com.cuttlefish.endline" class="btn btn-success btn-lg wow fadeInLeft" data-wow-duration="2s" data-wow-delay="0.2s"><i class="fa fa-android fa-2x"></i> Available! <br /> <small>Android version 1.0</small></a>
+						<a href="#" class="btn btn-info btn-lg wow fadeInRight" data-wow-duration="3s" data-wow-delay="0.3s"><i class="fa fa-apple fa-2x"></i>  Coming soon <br /> <small>iOs version 1.0</small></a>
+						</div>
+
+					</div>
+				</div>
+			</div>
+		</div>
+    </section>
+
+	<!-- /Section: intro -->
+	<div class="divider-short" id="game-divider"></div>
+
+    <section id="content1" class="home-section">
+
+		<div class="container" id="game-container">
+			<div class="row text-center heading">
+				<h3>Play the game in your browser</h3>
+			</div>
+
+
+				<h5><center>Click to play</center></h5>
+					<!-- <div class="wow fadeInRight" data-wow-delay="0.3s"> -->
+          <div class="fadeInRight">
+
+          <style media="screen">
+            #game{
+              width: 100%;
+              height: 600px;
+              max-width: 100%;
+              margin: auto;
+              background-image: url('img/lol.png');
+              background-size: 100% auto;
+              background-position: center;
+            }
+            #game embed{
+              display: block;
+              margin: 0% auto;
+              max-width: 100%;
+            }
+            @media (max-width:990px) {
+              #game-container, #game-divider{
+                display: none;
+              }
+            }
+          </style>
+          <script type="text/javascript">
+                      $(function(){
+                        $('#game, #game embed')
+                        .height( 600 )
+                        .width( 450 )
+                        ;
+                      });
+          </script>
+          <div id="game">
+            <embed src="game.swf">
+          </div>
+				</div>
+			</div>
+		</div>
+
+	</section>
+
+
+
+
+  <!-- /Section: intro -->
+	<div class="divider-short"></div>
+
+    <section id="content1" class="home-section">
+
+		<div class="container">
+			<div class="row text-center heading">
+				<h3>Features</h3>
+			</div>
+
+			<div class="row">
+				<div class="col-md-6">
+
+					<div class="wow fadeInLeft" data-wow-delay="0.2s" id="lefpanel">
+						<img src="img/img-1.png" alt="" class="img-responsive" />
+					</div>
+				</div>
+				<div class="col-md-6">
+
+					 <div class="wow fadeInRight" data-wow-delay="0.3s">
+
+
+
+
+
+
+
+						<div class="features">
+							<i class="fa fa-check fa-2x circled bg-skin float-left"></i>
+							<h5>Game modes</h5>
+							<p>
+							Endline offers a variety of different modes, every play-through is challenging in a unique way.
+							</p>
+						</div>
+						<div class="features">
+							<i class="fa fa-check fa-2x circled bg-skin float-left"></i>
+							<h5>Colour palettes</h5>
+							<p>
+							The game has a wide range of palettes. Each palette is manually selected, giving the game a fresh look.
+							</p>
+						</div>
+						<div class="features">
+							<i class="fa fa-check fa-2x circled bg-skin float-left"></i>
+							<h5>Free updates</h5>
+							<p>
+							The game is still under development, every release will introduce a new update. The updates are based on the players’ feedback – so please, let us know what you think about the game, if you haven’t already.
+							</p>
+						</div>
+
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</section>
+	<!-- /Section: content -->
+
+	<div class="divider-short"></div>
+
+    <section id="content2" class="home-section">
+
+		<div class="container">
+			<div class="row text-center heading">
+				<h3>Tell us what you think</h3>
+			</div>
+
+
+			<div class="row">
+				<div class="col-md-6">
+					<div class="wow fadeInLeft" data-wow-delay="0.2s">
+						<p>
+
+
+						Thank you for playing the game. Here you can post what you think about the game, and how it can be improved. Any feedback will be greatly appreciated!
+						</p>
+
+						<div class="divider-short marginbot-30 margintop-30"></div>
+						<p>
+						<div class="fb-comments" data-href="http://zh4n.com/endline.html" data-width="600" data-numposts="5"></div>
+						</p>
+
+
+						<div class="features">
+							<i class="fa fa-android fa-2x circled bg-skin float-left"></i>
+							<h5>Available on Android</h5>
+						</div>
+						<div class="features">
+							<i class="fa fa-apple fa-2x circled bg-skin float-left"></i>
+							<h5>Coming to iOs</h5>
+						</div>
+						<div class="features">
+							<i class="fa fa-windows fa-2x circled bg-skin float-left"></i>
+							<h5>Available on web</h5>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-6">
+					<div class="wow fadeInRight" data-wow-delay="0.3s">
+						<img src="img/img-2.png" alt="" class="img-responsive" />
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+	</section>
+	<!-- /Section: content -->
+<!--
+	<div class="divider-short"></div>
+    <section id="works" class="home-section text-center">
+		<div class="container">
+			<div class="row text-center heading">
+				<h3>Screenshots</h3>
+			</div>
+            <div class="row">
+                <div class="col-sm-12 col-md-12 col-lg-12" >
+
+                    <div class="row gallery-item">
+                        <div class="col-md-3">
+							<a href="img/works/1.png" title="This is an image title" data-lightbox-gallery="gallery1" data-lightbox-hidpi="img/works/1.png">
+								<img src="img/works/1.png" class="img-responsive" alt="img">
+							</a>
+						</div>
+						<div class="col-md-3">
+							<a href="img/works/2.png" title="This is an image title" data-lightbox-gallery="gallery1" data-lightbox-hidpi="img/works/2.png">
+								<img src="img/works/2.png" class="img-responsive" alt="img">
+							</a>
+						</div>
+						<div class="col-md-3">
+							<a href="img/works/3.png" title="This is an image title" data-lightbox-gallery="gallery1" data-lightbox-hidpi="img/works/3.png">
+								<img src="img/works/3.png" class="img-responsive" alt="img">
+							</a>
+						</div>
+						<div class="col-md-3">
+							<a href="img/works/4.png" title="This is an image title" data-lightbox-gallery="gallery1" data-lightbox-hidpi="img/works/4.png">
+								<img src="img/works/4.png" class="img-responsive" alt="img">
+							</a>
+						</div>
+					</div>
+
+                </div>
+            </div>
+		</div>
+	</section>
+-->
+<!--
+Zhan uncommented this too!!
+
+	<section id="callaction" class="home-section paddingtop-40">
+           <div class="container">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="callaction">
+							<div class="row">
+								<div class="col-md-8">
+									<div class="wow fadeInUp" data-wow-delay="0.1s">
+									<div class="cta-text">
+									<h3>Need more advanced features?</h3>
+									<p>Lorem ipsum dolor sit amet consectetur adipiscing elit uisque interdum ante eget faucibus. </p>
+									</div>
+									</div>
+								</div>
+								<div class="col-md-4">
+									<div class="wow lightSpeedIn" data-wow-delay="0.1s">
+										<div class="cta-btn">
+										<a href="#" class="btn btn-skin btn-lg">Contact us</a>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+            </div>
+	</section>
+-->
+	<footer>
+
+
+		<div class="sub-footer">
+		<div class="container">
+			<div class="row">
+
+				</div>
+				<div class="col-sm-6 col-md-6 col-lg-6">
+
+					<div class="wow fadeInUp" data-wow-delay="0.1s">
+    					<div class="text-right margintop-30">
+    						<div class="credits">
+                                <!--
+                                    All the links in the footer should remain intact.
+                                    You can delete the links only if you purchased the pro version.
+                                    Licensing information: https://bootstrapmade.com/license/
+                                    Purchase the pro version form: https://bootstrapmade.com/buy/?theme=Appland
+                                -->
+                                <a href="">ENDLINE 2017</a>
+                            </div>
+    					</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		</div>
+	</footer>
+
+</div>
+<a href="#" class="scrollup"><i class="fa fa-angle-up active"></i></a>
+
+	<!-- Core JavaScript Files -->
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/jquery.easing.min.js"></script>
+	<script src="js/wow.min.js"></script>
+	<script src="js/jquery.scrollTo.js"></script>
+	<script src="js/nivo-lightbox.min.js"></script>
+    <script src="js/custom.js"></script>
+
+</body>
+
+<!-- facebook plug in part 1 -->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v2.10";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+</html>
