@@ -425,7 +425,7 @@ h5, h6          { font-weight: bolder }
 .top .title{
     display: block;
     width: 100%;
-    color: #c54473;/*  text colour  */
+    color: #FFF;/*  text colour  */
     font-family: "raleway-bold", arial;
     font-size: 26px;
     font-weight: bold;
@@ -477,6 +477,8 @@ h5, h6          { font-weight: bolder }
     margin-bottom: 60px;
 }
 
+
+
 .content h1,
 .content h2,
 .content h3,
@@ -499,6 +501,8 @@ h5, h6          { font-weight: bolder }
 h2::before {
   content: " // ";
 }
+
+
 
 
 
