@@ -65,12 +65,13 @@
 
 /*  General CSS*/
 body{
-    background: #fff;
+    background: #111;
 }
 
 .wrapper{
-    width: 92.72727272727273%;
+    width: 98.72727272727273%;
     margin: 0 auto;
+    
 }
 
 header ul.social li a,
@@ -122,10 +123,10 @@ h5, h6          { font-weight: bolder }
         position: fixed;
         top: 0;
         left: 0;
-        width: 250px;
+        width:300px;
         min-height: 100%;
         padding: 0 0 0 50px;
-        background: #ffffff;
+        background: radial-gradient(circle at bottom right, #9d4b6f, #c52780);/*  background of the side menu  */
         float: left;
         overflow: hidden;
         z-index: 9999;
@@ -138,43 +139,53 @@ h5, h6          { font-weight: bolder }
     header nav ul{
         display: block;
         overflow: hidden;
-        margin-top: 100px;
+        margin-top: 80px;
         list-style: none;
+      
     }
 
     header nav ul li{
         display: block;
-        margin-bottom: 30px;
+        margin-bottom: 20px;/* distance between menu buttons */
+           margin-top: 20px;/* both ways */
     }
 
     header nav ul li a{
-        color: #454545;
+        color: #ffbf08; /* colour of side menu text */
         font-family: "raleway-regular", arial;
-        font-size: 14px;
+        font-size: 20px;
         text-decoration: none;
         letter-spacing: 1px;
+        font-weight: bold;
+        background: #FFFFFF20;
+        padding: 5px 5px 5px 5px;
     }
 
     header nav ul li a:hover,
     header nav ul li a.selected{
-        color: #969595;
+        color: #ff7fbe;
     }
 
     header .footer{
         position: absolute;
         bottom: 50px;
+       
     }
 
     header ul.social{
         list-style: none;
-        margin-bottom: 5px;
+     padding: 5px 5px 5px 5px;
+    
+       
     }
 
     header ul.social li{
         display: block;
         float: left;
         position: relative;
-        margin: 0 5px 15px 0;
+        padding: 6px 6px 6px 6px;
+        background: #FFFFFF20;
+       
     }
 
 
@@ -270,13 +281,14 @@ h5, h6          { font-weight: bolder }
 .main{
     width: 100%;
     height: 100%;
-    padding-left: 300px;
+    padding-left: 350px;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
     position: relative;
     z-index: 55;
-    background: #f6f6f6;
+    
+    background: #222;/*  background of the pages content  */
     clear: both;
 }
 
@@ -308,8 +320,9 @@ h5, h6          { font-weight: bolder }
     height: 100%;
     top: 0;
     left: 0;
-    background: #ffffff;
+    background: #222;/*  select main squares colour text  */
     opacity: 0;
+   
 }
 
 
@@ -404,14 +417,15 @@ h5, h6          { font-weight: bolder }
 
 .top .title{
     display: block;
-    width: 100%;color: #4b4848;
+    width: 100%;
+    color: #c54473;/*  text colour  */
     font-family: "raleway-bold", arial;
     font-size: 26px;
     font-weight: bold;
-    background: rgba(255, 255, 255, .7);
+    background: rgba(10, 10, 10, .7);/*  colour of the page title bg  */
     padding: 20px;
     text-transform: uppercase;
-    line-height: 30px;
+    line-height: 20px;
     margin: 0!important;
     overflow: hidden;
 
@@ -426,8 +440,8 @@ h5, h6          { font-weight: bolder }
     position: absolute;
     bottom: 0;
     margin: 0 auto;
-    left: 50%;
-    margin-left: -46.36363636363637%;
+    left: 0%;
+    margin-left: 0.7%;
 }
 
 .content{
@@ -435,17 +449,21 @@ h5, h6          { font-weight: bolder }
     font-family: "raleway-regular", arial;
     font-size: 15px;
     line-height: 22px;
-    padding: 60px 30px;
-    background: #fff;
+    padding: 10px 20px;
+    background: #151515;/*   bg colour of the content on pages */
 
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     -ms-box-sizing: border-box;
     box-sizing: border-box;
+
+
+
 }
 
 .content p{
-    color: #4b4848;
+    color: #999;/*   content page text colour */
+
     font-family: "raleway-regular", arial;
     font-size: 15px;
     line-height: 24px;
@@ -458,15 +476,22 @@ h5, h6          { font-weight: bolder }
 .content h4,
 .content h5,
 .content h6{
-    color: #4b4848;
+    color: #e13d76;/*    page titles text colour */
     font-family: "raleway-semibold", arial;
     font-weight: bold;
     line-height: 28px;
     margin-bottom: 30px;
-
+    background: #FFFFFF06;
+    padding: 7px 7px 7px 7px;
 }
 
 
+
+
+
+h2::before {
+  content: " // ";
+}
 
 
 
@@ -535,13 +560,14 @@ h5, h6          { font-weight: bolder }
 
 
 
-/*  Responsive code  */
+/* my text code!  */
 
 .text-container {
     width: 780px;
     padding: 5px; /* Optional: Adds some padding inside the div */
     border: 0px solid #ccc; /* Optional: Adds a border to the div */
     word-wrap: break-word; /* Ensures long words wrap to the next line */
+    color: #aaaaaa;/*    text colour in content */
 }
 
 
@@ -561,6 +587,7 @@ h5, h6          { font-weight: bolder }
     }
     header .footer{
         display: none;
+       
     }
     header #menu_icon,
     header .close_menu{
