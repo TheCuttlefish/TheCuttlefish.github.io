@@ -65,7 +65,8 @@
 
 /*  General CSS*/
 body{
-    background: #111;
+    /*background: #db156b;  main for top menu when it's smaller' colour!!*/
+    background: radial-gradient(circle at bottom right, #9d4b6f, #c52780);
 }
 
 .wrapper{
@@ -159,13 +160,18 @@ h5, h6          { font-weight: bolder }
         font-weight: bold;
         background: #FFFFFF20;
         padding: 5px 5px 5px 5px;
+
     }
 
     header nav ul li a:hover,
     header nav ul li a.selected{
-        color: #ff7fbe;
+        color: #ffeaf3;
+        background: #222;
+       
     }
 
+
+ 
     header .footer{
         position: absolute;
         bottom: 50px;
@@ -184,7 +190,7 @@ h5, h6          { font-weight: bolder }
         float: left;
         position: relative;
         padding: 6px 6px 6px 6px;
-        background: #FFFFFF20;
+        background: #222;
        
     }
 
@@ -320,7 +326,7 @@ h5, h6          { font-weight: bolder }
     height: 100%;
     top: 0;
     left: 0;
-    background: #222;/*  select main squares colour text  */
+    background: #222;/*  select main squares colour bg  */
     opacity: 0;
    
 }
@@ -338,6 +344,7 @@ h5, h6          { font-weight: bolder }
     text-align: center;
     top: 50%;
     margin-top: -40px;
+    
 }
 
 .main .work .caption h1{
@@ -346,12 +353,12 @@ h5, h6          { font-weight: bolder }
     max-width: 90%;
     padding: 20px 0;
     z-index: 77;
-    color: #454545;
+    color: #ff60a5;/*  select main squares colour text  */
     font-family: "raleway-regular", arial;
-    font-size: 16px;
-    letter-spacing: .5px;
-    border-bottom: 1px solid #bfbbbb;
-    border-top: 1px solid #bfbbbb;
+    font-size: 20px;
+    letter-spacing: 1px;
+    border-bottom: 2px solid #ffb833;/*  select main squares lines colour  */
+    border-top: 2px solid #ffb833;
 }
 
 
