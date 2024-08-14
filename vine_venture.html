@@ -10,6 +10,11 @@
 	<link rel="stylesheet" type="text/css" href="css/main.css">
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/main.js"></script>
+
+
+
+
+
 </head>
 
 <body>
@@ -63,7 +68,7 @@
 					</ul>
 
 				</div><!-- end work_nav -->
-				<h1 class="title">Vine Venture - Coming soon!</h1>
+				<h1 class="title">Vine Venture (2023 - 2014 archive)</h1>
 			</div>
 		</section><!-- end top -->
 
@@ -85,9 +90,14 @@
 
 			</p>
 			<h2>About</h2>
-				<p>
-				Vine Venture was my final university project. I developed the concept together with Nicola Zamboni, we made a first prototype for the End of Year Show, where it received an incredible feedback. As a result, we were given a patronage from the University of Arts London, to proceed the development of the game. The game forgone further 4 months of development at the university. Currently the game is under development, and you can play it at some gaming shows.
-				<br>
+
+			<div class="text-container">
+    Vine Venture was my final university project. I developed the concept together with Nicola Zamboni, we made a first prototype for the End of Year Show, where it received an incredible feedback. As a result, we were given a patronage from the University of Arts London, to proceed the development of the game. The game forgone further 4 months of development at the university. Currently the game is under development, and you can play it at some gaming shows.
+			
+			</div>
+
+				
+				
 				<br>
 				<img src="img/vv_original.jpg">
 				</p>
@@ -95,8 +105,9 @@
 
 				<h2>Core Design</h2>
 				<p>
+				<div class="text-container">
 				The game concept was initially based on building a tall sky scraper, from given shapes – in Tetris-like fashion, with progression player would have to deal with weather and physics. As we begun discussing the design, we changed our idea to a tree, that would use resources from the ground(roots) to grow as tall as possible. As the design went along we realising that growing a tree into any given direction was more rewarding and novel. At that point our tree begun looking more like a vine, hence we changed our design, now the player could grow into any direction and explore the map at their own pace – at this point the game had a title – Vine Venture.
-
+				</div>
 				<br>
 				<br>
 				<img src="img/vv_dd.jpg">
@@ -105,7 +116,9 @@
 
 				<h2>Prototyping</h2>
 				<p>
+				<div class="text-container">
 				The game has forgone 4 major prototyping stages. The initial build was made in Adobe Flash (now Adobe Animate), where I explored the building mechanic, and how it would feel to stem vines. Once we settled for a feel, I begun developing a new prototype in Unity where I explored how the concept worked together with physics, once we settled for the initial feel for physics, I focused on making a game prototype, adding different mechanics and game objects, this was the version that was shown at the end of year show 2014. After the summer, we started working on the project full time, I had so many improvements and ideas that I wanted to add, that it made sense to build a brand new version of the game. (One of the major reasons, was a stemming mechanic, we changed our design to comply with touch screen devices, and It came out much cleaner and easier to work with, because we already had our design worked out, it was a matter of putting everything in order.
+				</div>
 				<br>
 				<br>
 				<img src="img/vv_proto.jpg">
@@ -114,7 +127,9 @@
 
 				<h2>Future</h2>
 				<p>
+				<div class="text-container">
 				We would like to publish Vine Venture on Steam, and later on on iOS and Android. Right now you can find us at shows, and give us your feedback!
+				</div>
 				<br>
 				<br>
 				<img src="img/vv_show.jpg">
@@ -143,9 +158,215 @@
 	More - <a href="http://zhancat.blogspot.co.uk/2014_10_01_archive.html">on my blog</a>
 
 
+
+
+	</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header" id="myHeader">
+  <h1>Development files</h1>
+  <p>click to change zoom</p>
+  <button class="btn" onclick="one()">1</button>
+  <button class="btn" onclick="two()">2</button>
+  <button class="btn active" onclick="four()">4</button>
+</div>
+
+<!-- Photo Grid -->
+<div class="row"> 
+  <div class="column">
+    <img src="vv/1.png" style="width:100%">
+    <img src="vv/2.png" style="width:100%">
+    <img src="vv/3.png" style="width:100%">
+    <img src="vv/4.png" style="width:100%">
+    <img src="vv/5.png" style="width:100%">
+</div>
+<div class="column">
+    <img src="vv/6.png" style="width:100%">
+    <img src="vv/7.png" style="width:100%">
+    <img src="vv/8.png" style="width:100%">
+    <img src="vv/9.png" style="width:100%">
+    <img src="vv/10.png" style="width:100%">
+</div>  
+<div class="column">
+    <img src="vv/11.png" style="width:100%">
+    <img src="vv/12.png" style="width:100%">
+    <img src="vv/13.png" style="width:100%">
+    <img src="vv/14.png" style="width:100%">
+    <img src="vv/15.png" style="width:100%">
+</div>
+<div class="column">
+    <img src="vv/16.png" style="width:100%">
+    <img src="vv/17.png" style="width:100%">
+  </div>
+</div>
+
+<script>
+// Get the elements with class="column"
+var elements = document.getElementsByClassName("column");
+
+// Declare a loop variable
+var i;
+
+// Full-width images
+function one() {
+    for (i = 0; i < elements.length; i++) {
+    elements[i].style.msFlex = "100%";  // IE10
+    elements[i].style.flex = "100%";
+  }
+}
+
+// Two images side by side
+function two() {
+  for (i = 0; i < elements.length; i++) {
+    elements[i].style.msFlex = "50%";  // IE10
+    elements[i].style.flex = "50%";
+  }
+}
+
+// Four images side by side
+function four() {
+  for (i = 0; i < elements.length; i++) {
+    elements[i].style.msFlex = "25%";  // IE10
+    elements[i].style.flex = "25%";
+  }
+}
+
+// Add active class to the current button (highlight it)
+var header = document.getElementById("myHeader");
+var btns = header.getElementsByClassName("btn");
+for (var i = 0; i < btns.length; i++) {
+  btns[i].addEventListener("click", function() {
+    var current = document.getElementsByClassName("active");
+    current[0].className = current[0].className.replace(" active", "");
+    this.className += " active";
+  });
+}
+
+
+
+window.onload = function() {
+    four();
+};
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 			</div><!-- end content -->
 		</section>
 	</section><!-- end main -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.header {
+  text-align: center;
+  padding: 32px;
+}
+
+.row {
+  display: -ms-flexbox; /* IE 10 */
+  display: flex;
+  -ms-flex-wrap: wrap; /* IE 10 */
+  flex-wrap: wrap;
+  padding: 0 4px;
+}
+
+/* Create two equal columns that sits next to each other */
+.column {
+  -ms-flex: 50%; /* IE 10 */
+  flex: 50%;
+  padding: 0 4px;
+}
+
+.column img {
+  margin-top: 8px;
+  vertical-align: middle;
+}
+
+/* Style the buttons */
+.btn {
+  border: none;
+  outline: none;
+  padding: 10px 16px;
+  background-color: #f1f1f1;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.btn:hover {
+  background-color: #ddd;
+}
+
+.btn.active {
+  background-color: #666;
+  color: white;
+}
+
+
+
+
+
+
+
+
+
+
 
 </body>
 </html>

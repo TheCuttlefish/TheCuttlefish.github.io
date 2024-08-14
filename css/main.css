@@ -535,8 +535,14 @@ h5, h6          { font-weight: bolder }
 
 
 
+/*  Responsive code  */
 
-
+.text-container {
+    width: 780px;
+    padding: 5px; /* Optional: Adds some padding inside the div */
+    border: 0px solid #ccc; /* Optional: Adds a border to the div */
+    word-wrap: break-word; /* Ensures long words wrap to the next line */
+}
 
 
 /*  Responsive code  */
@@ -617,3 +623,5 @@ h5, h6          { font-weight: bolder }
         width: 100%;
     }
 }
+
+
