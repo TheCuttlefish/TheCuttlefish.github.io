@@ -62,6 +62,8 @@
 			<div class="content">
 
 
+			<h2>Creating MatCap Shader in Unity</h2>
+
 			<div class="text-container">
 			A MatCap shader (short for "Material Capture" shader) is a type of shading technique often used in 3D graphics to apply a predefined material or surface appearance to a 3D object. This technique is popular because it allows artists to quickly give objects a complex, polished look without needing advanced lighting calculations.
 	
@@ -80,27 +82,32 @@
 
 
 			<div class="text-container">
-			This shader works well on shiny materials such as: metals, liquids, glass, gems, car-pain finish etc.
+			This shader works well on shiny materials such as: metals, liquids, glass, gems, car-pain finish, toon (anime) etc.
 			<img src="matcap/matcap_gold.gif"> <br>
 			Notice how this shader works much better on more detailed mesh. As you can see the bunny has a good representation of a golden material, whereas the cube is not shaded as well (even though they share the same material! ).
 			<br>
 			<img src="matcap/matcap_gold_mesh.gif"> <br>
 
-			This shader allows for a great artistic control, as you can see the detail of the bitmap is preserved well! However, the MatCap shader utilises a variation of "baked lighting"" and does not represent real time shading by default!
+			This shader allows for a great artistic control, as you can see the detail of the bitmap is preserved well! However, the MatCap shader utilises a variation of "baked lighting" and does not represent real time shading by default!
 
 			<img src="matcap/matcap_gold_zoom.gif"> <br>
 				<img src="matcap/matcap_gold.png" width="503" height="503">
 
 				<br>
 
+				</div>
+				<h2>MatCap Shader with transparency</h2>
+				<div class="text-container">
 				Naturally MatCap shaders works extremely well to depics translusent objects such as: ice, glass, bubbles etc.
+				<br><br>
 				<img src="matcap/matcap_alpha.gif"> <br>
 				<img src="matcap/matcap_alpha2.gif"> <br>
 
 				<img src="matcap/matcap_bubble.png" width="503" height="503">
 
 				<br>
-				Here is an implementation of MatCap shader with alpha trasparency channel! Make sure that your SurfaceType is set to Transparent. This effect has a lot of potential, and it is computationaly light-weight.
+
+				Here is an implementation of a MatCap shader featuring an alpha transparency channel. Ensure your Surface Type is set to Transparent for optimal results. This effect offers significant potential while maintaining computational efficiency.
 			</div>
 			<img src="matcap/matcap_sg2.PNG"> <br>
 
@@ -123,15 +130,26 @@
 			<br> <br>
 
 			<div class="text-container">
-			Notable example, this effect can be seen in Super Mario Odyssey - Gold Mario ( it appears to use a similar shading technique ), this shader is sometimes used as a default material in 3D modelling software.
-			
-			</div>
+			A notable example of this effect can be seen in Super Mario Odyssey, where Gold Mario appears to utilize a similar shading technique. Often employed as a default material in 3D modeling software, this shader provides a quick and efficient way to add depth and realism to objects.
+			<br><br>
 
 			<img src="matcap/mario_odyssey.gif"> <br>
 			<br> <br>
 			
 			<a href="matcap/matcap.zip" style="color: #ffbf00; text-decoration: none; padding: 10px 10px 10px 10px; background:#c05a89" > ▼ Download all files! [ 2 shaders & 6 bitmaps ]</a> 
 			<br> <br>
+			</div>
+			<h2>How to create your own texture for a MatCap shader</h2>
+			<div class="text-container">
+			
+			When creating a MatCap texture, it's essential to utilize the entire bitmap area, as demonstrated in the example below. It is also possible to use a square gradient that will cover the entire bitmap. When creating a bitmap texture for a Matcap shader, it is intuitive to draw a spherical shape to represent the full range of lighting conditions. By mapping the desired colors and gradients onto this sphere, you can effectively simulate how light interacts with the surface of a 3D object from various angles.
+			<br> <br>
+			<img src="matcap/matcap_bitmap1.png" width="165" height="165">
+			<img src="matcap/matcap_bitmap2.png" width="165" height="165">
+			<img src="matcap/matcap_bitmap4.png" width="165" height="165">
+
+
+			</div>
 			</div><!-- end content -->
 		</section>
 	</section><!-- end main -->
