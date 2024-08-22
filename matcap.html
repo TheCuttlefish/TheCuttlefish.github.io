@@ -73,20 +73,28 @@
 			<img src="matcap/matcap_toon.png" width="165" height="165">
 
 			<br><br>
-			The shader itself is relatively simple. The bitmap is mapped onto the mesh based on the camera's view direction and the object's surface normals. This effect works notably well with unlit shaders: 
+			The shader is relatively straightforward, mapping the bitmap onto the mesh according to the camera's view direction and the object's surface normals. This approach is similar to a billboard shader but also considers the mesh's shape. This effect is particularly effective when used with unlit shaders.
+
+			<br>
+			<br>
+			<img src="matcap/mc_example.png">
+			<br>
+
+
 			</div>
 			<img src="matcap/matcap_sg.PNG">
 
 
 			<div class="text-container">
 			This shader works well on shiny materials such as: metals, liquids, glass, gems, car-pain finish, toon (anime) etc.
-			<img src="matcap/matcap_gold.gif"> <br>
+			<br><br>
+			<img src="matcap/matcap_gold.gif"> <br> <br>
 			Notice how this shader works much better on more detailed mesh. As you can see the bunny has a good representation of a golden material, whereas the cube is not shaded as well (even though they share the same material! ).
-			<br>
+			<br><br>
 			<img src="matcap/matcap_gold_mesh.gif"> <br>
-
+			<br>
 			This shader allows for a great artistic control, as you can see the detail of the bitmap is preserved well! However, the MatCap shader utilises a variation of "baked lighting" and does not represent real time shading by default!
-
+			<br><br>
 			<img src="matcap/matcap_gold_zoom.gif"> <br>
 				<img src="matcap/matcap_gold.png" width="503" height="503">
 
@@ -102,16 +110,19 @@
 
 				<img src="matcap/matcap_bubble.png" width="503" height="503">
 
-				<br>
+				<br><br>
 
 				Here is an implementation of a MatCap shader featuring an alpha transparency channel. Ensure your Surface Type is set to Transparent for optimal results. This effect offers significant potential while maintaining computational efficiency.
-			</div>
+				
+				</div>
 			<img src="matcap/matcap_sg2.PNG"> <br>
 
-			<img src="matcap/surface_type_alpha.PNG"> <br>
+			<img src="matcap/surface_type_alpha.PNG"> <br><br>
 			<div class="text-container">
+			
 			Here are few more examples, feel free to download the bitmaps and use it in your projects! <br> [ Images are 2048x2048 ]
-			</div>
+			
+			</div> 
 			<img src="matcap/matcap_demo1.gif"> <br>
 			<img src="matcap/matcap_gold.png" width="165" height="165">
 			<img src="matcap/matcap_green.png" width="165" height="165">
