@@ -17,16 +17,21 @@
 
   <!-- Optional favicon for browsers -->
   <link rel="icon" href="/3000/favIcon-180-2.png">
+
+  <!-- Auto redirect -->
+  <script>
+    window.location.replace("https://zhan.itch.io/time-to-three");
+  </script>
 </head>
 
 <body style="margin:0; background:black;">
-
-  <!-- Embed itch.io game page -->
-  <iframe
-    src="https://zhan.itch.io/time-to-three"
-    style="border:0; width:100vw; height:100vh;"
-    allow="fullscreen; autoplay; gamepad"
-  ></iframe>
-
+  <!-- Fallback if JS is disabled -->
+  <noscript>
+    <p style="color:white; text-align:center; margin-top:40vh;">
+      <a href="https://zhan.itch.io/time-to-three" style="color:white;">
+        Open game
+      </a>
+    </p>
+  </noscript>
 </body>
 </html>
