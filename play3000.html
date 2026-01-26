@@ -18,20 +18,67 @@
   <!-- Optional favicon for browsers -->
   <link rel="icon" href="/3000/favIcon-180-2.png">
 
-  <!-- Auto redirect -->
-  <script>
-    window.location.replace("https://zhan.itch.io/time-to-three");
-  </script>
+  <style>
+    html, body { height:100%; margin:0; background:#000; color:#fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    .wrap {
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+      gap: 14px;
+      text-align:center;
+    }
+    .title { font-size: 22px; font-weight: 800; letter-spacing: 0.5px; }
+    .sub { opacity: 0.8; font-size: 14px; line-height: 1.4; max-width: 28rem; }
+    .btn {
+      display:inline-block;
+      padding: 14px 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.10);
+      color: #fff;
+      text-decoration:none;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      min-width: 200px;
+    }
+    .tiny { opacity: 0.6; font-size: 12px; }
+  </style>
 </head>
 
-<body style="margin:0; background:black;">
-  <!-- Fallback if JS is disabled -->
-  <noscript>
-    <p style="color:white; text-align:center; margin-top:40vh;">
-      <a href="https://zhan.itch.io/time-to-three" style="color:white;">
-        Open game
-      </a>
-    </p>
-  </noscript>
+<body>
+  <div class="wrap">
+    <div class="title">GET 3.000!</div>
+
+    <a class="btn" id="playBtn" href="https://zhan.itch.io/time-to-three" target="_self" rel="noopener">
+      PLAY
+    </a>
+
+    <div class="tiny" id="hint"></div>
+  </div>
+
+  <script>
+    const url = "https://zhan.itch.io/time-to-three";
+
+    // Detect iOS "Add to Home Screen" standalone mode
+    const isIOSStandalone = (window.navigator.standalone === true) ||
+      (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+
+    const hint = document.getElementById("hint");
+
+    // Only try auto-open in standalone mode (so desktop/browser always shows the button)
+    if (isIOSStandalone) {
+      hint.textContent = "Opening… if it doesn’t, tap PLAY.";
+      // Small delay so UI renders first
+      setTimeout(() => {
+        // Use href (not replace) so it behaves like a normal navigation
+        window.location.href = url;
+      }, 900);
+    } else {
+      hint.textContent = "Made by Cuttlefish!";
+    }
+  </script>
 </body>
 </html>
