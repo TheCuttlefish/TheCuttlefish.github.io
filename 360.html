@@ -101,7 +101,7 @@ html,body{
   <button id="recenterButton" class="motionButton" type="button">Recenter</button>
 </div>
 
-<div id="hud">Drag = pan · Wheel = zoom · iPhone tilt = zoom · gyro = look</div>
+<div id="hud">Drag = pan · Wheel = zoom · iPhone gyro = rotation</div>
 <div id="readout">View: 90° · Perspective</div>
 <div id="error"></div>
 
@@ -744,7 +744,6 @@ html,body{
   let baseGamma = 0;
   let gyroYaw = 0;
   let gyroPitch = 0;
-  let gyroZoom = 0;
   let lastMotionAt = 0;
 
   const MIN_VIEW = 20;
@@ -778,7 +777,6 @@ html,body{
     motionHasBaseline = true;
     gyroYaw = 0;
     gyroPitch = 0;
-    gyroZoom = 0;
   }
 
   function recenterMotion(){
@@ -794,20 +792,17 @@ html,body{
       return;
     }
 
-    const da = wrapDegrees(e.alpha - baseAlpha);
     const db = wrapDegrees(e.beta - baseBeta);
     const dg = wrapDegrees(e.gamma - baseGamma);
 
-    // alpha = left/right heading
-    // gamma = vertical look
-    // beta = front/back phone pitch -> zoom
-    gyroYaw = degToRad(da) * 0.85;
-    gyroPitch = degToRad(-dg) * 0.75;
+    // Gyro = angles only.
+    // gamma (roll left/right) rotates horizontally
+    // beta (tilt forward/back) rotates vertically
+    gyroYaw = degToRad(dg) * 1.00;
+    gyroPitch = degToRad(-db) * 0.70;
 
-    // Tilt phone forward/back to zoom.
-    // Positive beta delta zooms out, negative beta delta zooms in.
-    gyroZoom = db * 1.15;
-    gyroZoom = Math.max(-55, Math.min(180, gyroZoom));
+    // Keep vertical motion sane.
+    gyroPitch = Math.max(-1.25, Math.min(1.25, gyroPitch));
 
     lastMotionAt = performance.now();
   }
@@ -877,18 +872,9 @@ html,body{
     const renderYaw = yaw + (motionEnabled ? gyroYaw : 0);
     const renderPitch = pitch + (motionEnabled ? gyroPitch : 0);
 
-    let renderViewDeg = viewDeg;
-    let renderDeepZoom = deepZoom;
-
-    if(motionEnabled){
-      // Phone pitch modifies zoom.
-      if(viewDeg < MAX_VIEW || deepZoom <= 0.001){
-        renderViewDeg = Math.max(MIN_VIEW, Math.min(MAX_VIEW, viewDeg + gyroZoom));
-      }else{
-        // Once already in parallax mode, pitch continues through deep zoom.
-        renderDeepZoom = Math.max(0, deepZoom + Math.max(0, gyroZoom) * 0.055);
-      }
-    }
+    // Gyro affects rotation only. Zoom stays manual.
+    const renderViewDeg = viewDeg;
+    const renderDeepZoom = deepZoom;
 
     gl.uniform1f(uYaw, renderYaw);
     gl.uniform1f(uPitch, renderPitch);
