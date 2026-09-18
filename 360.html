@@ -41,6 +41,29 @@ html,body{
 }
 #uploadButton:hover{background:rgba(0,0,0,.72)}
 #uploadButton:active{transform:scale(.97)}
+
+#motionControls{
+  position:fixed;
+  top:14px;
+  right:14px;
+  z-index:20;
+  display:flex;
+  gap:8px;
+}
+.motionButton{
+  padding:9px 13px;
+  border:1px solid rgba(255,255,255,.20);
+  border-radius:10px;
+  background:rgba(0,0,0,.52);
+  color:#fff;
+  font:600 13px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  cursor:pointer;
+  user-select:none;
+}
+.motionButton:hover{background:rgba(0,0,0,.72)}
+#recenterButton{display:none}
 #hud,#readout{
   position:fixed;
   bottom:14px;
@@ -73,7 +96,12 @@ html,body{
 <input id="file" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
 <button id="uploadButton" type="button">Upload image</button>
 
-<div id="hud">Drag = pan · Wheel = zoom · Double-click = choose another image</div>
+<div id="motionControls">
+  <button id="motionButton" class="motionButton" type="button">Enable motion</button>
+  <button id="recenterButton" class="motionButton" type="button">Recenter</button>
+</div>
+
+<div id="hud">Drag = pan · Wheel = zoom · iPhone tilt = zoom · gyro = look</div>
 <div id="readout">View: 90° · Perspective</div>
 <div id="error"></div>
 
@@ -82,6 +110,8 @@ html,body{
   const canvas = document.getElementById('gl');
   const fileInput = document.getElementById('file');
   const uploadButton = document.getElementById('uploadButton');
+  const motionButton = document.getElementById('motionButton');
+  const recenterButton = document.getElementById('recenterButton');
   const errorBox = document.getElementById('error');
   const readout = document.getElementById('readout');
 
@@ -706,6 +736,17 @@ html,body{
   let viewDeg = 90;
   let deepZoom = 0;
 
+  // Mobile motion controls
+  let motionEnabled = false;
+  let motionHasBaseline = false;
+  let baseAlpha = 0;
+  let baseBeta = 0;
+  let baseGamma = 0;
+  let gyroYaw = 0;
+  let gyroPitch = 0;
+  let gyroZoom = 0;
+  let lastMotionAt = 0;
+
   const MIN_VIEW = 20;
   const MAX_VIEW = 720;
   const MAX_DEEP_ZOOM = 50;
@@ -718,6 +759,84 @@ html,body{
   function noteInteraction(){
     lastInteractionMs = performance.now();
   }
+
+
+  function degToRad(v){
+    return v * Math.PI / 180;
+  }
+
+  function wrapDegrees(v){
+    while(v > 180) v -= 360;
+    while(v < -180) v += 360;
+    return v;
+  }
+
+  function setMotionBaseline(alpha, beta, gamma){
+    baseAlpha = alpha || 0;
+    baseBeta = beta || 0;
+    baseGamma = gamma || 0;
+    motionHasBaseline = true;
+    gyroYaw = 0;
+    gyroPitch = 0;
+    gyroZoom = 0;
+  }
+
+  function recenterMotion(){
+    motionHasBaseline = false;
+  }
+
+  function onDeviceOrientation(e){
+    if(!motionEnabled) return;
+    if(e.alpha == null || e.beta == null || e.gamma == null) return;
+
+    if(!motionHasBaseline){
+      setMotionBaseline(e.alpha, e.beta, e.gamma);
+      return;
+    }
+
+    const da = wrapDegrees(e.alpha - baseAlpha);
+    const db = wrapDegrees(e.beta - baseBeta);
+    const dg = wrapDegrees(e.gamma - baseGamma);
+
+    // alpha = left/right heading
+    // gamma = vertical look
+    // beta = front/back phone pitch -> zoom
+    gyroYaw = degToRad(da) * 0.85;
+    gyroPitch = degToRad(-dg) * 0.75;
+
+    // Tilt phone forward/back to zoom.
+    // Positive beta delta zooms out, negative beta delta zooms in.
+    gyroZoom = db * 1.15;
+    gyroZoom = Math.max(-55, Math.min(180, gyroZoom));
+
+    lastMotionAt = performance.now();
+  }
+
+  async function enableMotion(){
+    try{
+      if(
+        typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function'
+      ){
+        const result = await DeviceOrientationEvent.requestPermission();
+        if(result !== 'granted'){
+          fail('Motion permission was not granted.');
+          return;
+        }
+      }
+
+      window.addEventListener('deviceorientation', onDeviceOrientation, true);
+      motionEnabled = true;
+      motionHasBaseline = false;
+      motionButton.textContent = 'Motion on';
+      recenterButton.style.display = 'inline-block';
+    }catch(err){
+      fail('Could not enable motion controls: ' + err.message);
+    }
+  }
+
+  motionButton.addEventListener('click', enableMotion);
+  recenterButton.addEventListener('click', recenterMotion);
 
   function resize(){
     const dpr = Math.min(devicePixelRatio || 1, 3);
@@ -754,10 +873,27 @@ html,body{
     }
 
     gl.uniform2f(uResolution, canvas.width, canvas.height);
-    gl.uniform1f(uYaw, yaw);
-    gl.uniform1f(uPitch, pitch);
-    gl.uniform1f(uViewDeg, viewDeg);
-    gl.uniform1f(uDeepZoom, deepZoom);
+
+    const renderYaw = yaw + (motionEnabled ? gyroYaw : 0);
+    const renderPitch = pitch + (motionEnabled ? gyroPitch : 0);
+
+    let renderViewDeg = viewDeg;
+    let renderDeepZoom = deepZoom;
+
+    if(motionEnabled){
+      // Phone pitch modifies zoom.
+      if(viewDeg < MAX_VIEW || deepZoom <= 0.001){
+        renderViewDeg = Math.max(MIN_VIEW, Math.min(MAX_VIEW, viewDeg + gyroZoom));
+      }else{
+        // Once already in parallax mode, pitch continues through deep zoom.
+        renderDeepZoom = Math.max(0, deepZoom + Math.max(0, gyroZoom) * 0.055);
+      }
+    }
+
+    gl.uniform1f(uYaw, renderYaw);
+    gl.uniform1f(uPitch, renderPitch);
+    gl.uniform1f(uViewDeg, renderViewDeg);
+    gl.uniform1f(uDeepZoom, renderDeepZoom);
     gl.uniform1f(uTime, (nowMs - startMs) * 0.001);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -766,6 +902,7 @@ html,body{
     if (deepZoom > 0.001) label += ' · Travel+' + deepZoom.toFixed(2);
     label += ' · ' + modeName();
     if (bubbleMode && idleMs > 2000) label += ' · Auto drift';
+    if (motionEnabled) label += ' · Gyro';
     readout.textContent = label;
 
     requestAnimationFrame(render);
@@ -872,6 +1009,7 @@ html,body{
 
   canvas.addEventListener('pointerdown', e => {
     noteInteraction();
+    if(motionEnabled) recenterMotion();
     dragging = true;
     sx = e.clientX; sy = e.clientY;
     syaw = yaw; spitch = pitch;
@@ -894,6 +1032,7 @@ html,body{
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
     noteInteraction();
+    if(motionEnabled) recenterMotion();
     const step = e.deltaY * 0.0015;
 
     if (step > 0) {
