@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>360 Image Viewer</title>
+<style>
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#090b0c;
+  color:#fff;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+}
+#gl{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+}
+#file{position:absolute;left:-9999px}
+#uploadButton{
+  position:fixed;
+  top:14px;
+  left:14px;
+  z-index:20;
+  padding:9px 13px;
+  border:1px solid rgba(255,255,255,.20);
+  border-radius:10px;
+  background:rgba(0,0,0,.52);
+  color:#fff;
+  font:600 13px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  cursor:pointer;
+  user-select:none;
+  transition:background .15s ease, transform .15s ease;
+}
+#uploadButton:hover{background:rgba(0,0,0,.72)}
+#uploadButton:active{transform:scale(.97)}
+#hud,#readout{
+  position:fixed;
+  bottom:14px;
+  z-index:6;
+  padding:8px 10px;
+  border-radius:9px;
+  background:rgba(0,0,0,.58);
+  font-size:13px;
+  user-select:none;
+}
+#hud{left:14px}
+#readout{right:14px}
+#error{
+  position:fixed;
+  top:14px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:30;
+  display:none;
+  max-width:min(860px,90vw);
+  padding:10px 14px;
+  border-radius:10px;
+  background:#7a1f1f;
+}
+</style>
+</head>
+<body>
+
+<canvas id="gl"></canvas>
+<input id="file" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+<button id="uploadButton" type="button">Upload image</button>
+
+<div id="hud">Drag = pan · Wheel = zoom · Double-click = choose another image</div>
+<div id="readout">View: 90° · Perspective</div>
+<div id="error"></div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('gl');
+  const fileInput = document.getElementById('file');
+  const uploadButton = document.getElementById('uploadButton');
+  const errorBox = document.getElementById('error');
+  const readout = document.getElementById('readout');
+
+  function fail(msg){
+    errorBox.textContent = msg;
+    errorBox.style.display='block';
+    clearTimeout(fail.t);
+    fail.t=setTimeout(()=>errorBox.style.display='none',6500);
+  }
+
+  uploadButton.addEventListener('click', () => fileInput.click());
+
+  const gl = canvas.getContext('webgl', {antialias:true});
+  if(!gl){
+    fail('WebGL is not available in this browser.');
+    return;
+  }
+
+  const vs = `
+    attribute vec2 aPos;
+    varying vec2 vPos;
+    void main(){
+      vPos = aPos;
+      gl_Position = vec4(aPos, 0.0, 1.0);
+    }
+  `;
+
+  const fs = `
+    precision highp float;
+
+    varying vec2 vPos;
+    uniform sampler2D uTex;
+    uniform vec2 uResolution;
+    uniform float uYaw;
+    uniform float uPitch;
+    uniform float uViewDeg;
+    uniform float uDeepZoom;
+    uniform float uTime;
+
+    const float PI = 3.14159265358979323846;
+
+    vec3 rotateX(vec3 p, float a){
+      float c = cos(a), s = sin(a);
+      return vec3(p.x, c*p.y - s*p.z, s*p.y + c*p.z);
+    }
+
+    vec3 rotateY(vec3 p, float a){
+      float c = cos(a), s = sin(a);
+      return vec3(c*p.x + s*p.z, p.y, -s*p.x + c*p.z);
+    }
+
+    float hash21(vec2 p){
+      return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453123);
+    }
+
+    vec2 hash22(vec2 p){
+      float n = sin(dot(p, vec2(41.0, 289.0)));
+      return fract(vec2(262144.0, 32768.0) * n);
+    }
+
+    float easeInOut(float t){
+      t = clamp(t, 0.0, 1.0);
+      return t < 0.5 ? 4.0*t*t*t : 1.0 - pow(-2.0*t + 2.0, 3.0) * 0.5;
+    }
+
+    vec3 samplePano(vec2 uv){
+      float u = fract(uv.x);
+      float v = clamp(uv.y, 0.0, 1.0);
+      float blendW = 0.0035;
+      vec3 c = texture2D(uTex, vec2(u, v)).rgb;
+
+      if (u < blendW) {
+        float t = smoothstep(0.0, blendW, u);
+        float u2 = 1.0 - (blendW - u);
+        vec3 c2 = texture2D(uTex, vec2(u2, v)).rgb;
+        c = mix(c2, c, t);
+      } else if (u > 1.0 - blendW) {
+        float t = smoothstep(1.0 - blendW, 1.0, u);
+        float u2 = u - (1.0 - blendW);
+        vec3 c2 = texture2D(uTex, vec2(u2, v)).rgb;
+        c = mix(c, c2, t);
+      }
+      return c;
+    }
+
+    vec3 panoColorFromDir(vec3 dir){
+      float lon = atan(dir.x, -dir.z);
+      float lat = asin(clamp(dir.y, -1.0, 1.0));
+      float u = 0.5 + lon / (2.0 * PI);
+      float v = 0.5 - lat / PI;
+      return samplePano(vec2(u, v));
+    }
+
+    vec3 applyRim(vec3 pano, float rn, float mask){
+      float rim = smoothstep(0.72, 1.0, rn);
+      rim = pow(rim, 1.7);
+      return pano + vec3(1.0) * rim * 0.18 * mask;
+    }
+
+    vec3 starBg(vec2 q){
+      // Clean smooth background with no blocky square artifacts.
+      vec3 bg = vec3(0.055, 0.065, 0.075);
+      float r = length(q);
+      float vignette = exp(-1.45 * r * r);
+      bg = mix(bg * 0.65, bg + vec3(0.12, 0.13, 0.12), vignette);
+      return bg;
+    }
+
+    vec3 bgColor(vec2 q, float focus){
+      vec3 base = starBg(q);
+      float r = length(q);
+      float soft = exp(-2.5 * abs(r - focus));
+      base += 0.015 * soft;
+      return base;
+    }
+
+    float noise(vec2 p){
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+
+      float a = hash21(i + vec2(0.0, 0.0));
+      float b = hash21(i + vec2(1.0, 0.0));
+      float c = hash21(i + vec2(0.0, 1.0));
+      float d = hash21(i + vec2(1.0, 1.0));
+
+      return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+    }
+
+    float fbm(vec2 p){
+      float v = 0.0;
+      float a = 0.5;
+      mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
+
+      for (int i = 0; i < 6; i++) {
+        v += a * noise(p);
+        p = m * p + 0.17;
+        a *= 0.52;
+      }
+      return v;
+    }
+
+    float ridged(vec2 p){
+      float v = 0.0;
+      float a = 0.55;
+      mat2 m = mat2(1.7, 1.1, -1.1, 1.7);
+
+      for (int i = 0; i < 5; i++) {
+        float n = noise(p);
+        n = 1.0 - abs(2.0 * n - 1.0);
+        v += a * n;
+        p = m * p + 0.23;
+        a *= 0.5;
+      }
+      return v;
+    }
+
+    vec3 nebulaPalette(float t, float phase){
+      // Smooth cosine palette for soft, non-choppy color evolution.
+      vec3 a = vec3(0.12, 0.06, 0.20);
+      vec3 b = vec3(0.28, 0.18, 0.40);
+      vec3 c = vec3(1.00, 0.85, 0.72);
+      vec3 d = vec3(
+        0.12 + 0.05 * sin(phase * 0.18),
+        0.33 + 0.07 * sin(phase * 0.14 + 1.7),
+        0.62 + 0.08 * sin(phase * 0.11 + 3.1)
+      );
+      return a + b * cos(6.28318 * (c * t + d));
+    }
+
+    vec3 nebulaStars(vec2 uv, float phase){
+      // Soft round stars — no square cells.
+      vec3 stars = vec3(0.0);
+
+      vec2 p1 = uv * 85.0;
+      vec2 i1 = floor(p1);
+      vec2 f1 = fract(p1);
+      vec2 c1 = hash22(i1 + floor(phase * 0.04)) * 0.70 + 0.15;
+      float h1 = hash21(i1 + 3.7);
+      float d1 = length(f1 - c1);
+      float s1 = smoothstep(0.10, 0.0, d1) * step(0.992, h1);
+      stars += vec3(s1 * 0.22);
+
+      vec2 p2 = uv * 150.0 + 11.3;
+      vec2 i2 = floor(p2);
+      vec2 f2 = fract(p2);
+      vec2 c2 = hash22(i2 + 9.1) * 0.70 + 0.15;
+      float h2 = hash21(i2 + 8.4);
+      float d2 = length(f2 - c2);
+      float s2 = smoothstep(0.07, 0.0, d2) * step(0.996, h2);
+      stars += vec3(s2 * 0.14);
+
+      return stars;
+    }
+
+    vec3 nebulaHyperspaceColor(vec2 q){
+      // Start this mode after some deep scroll so it feels like a deeper layer
+      // of the parallax experience rather than replacing it immediately.
+      // Start moving through the nebula immediately after 720°.
+      float nebulaTravel = max(uDeepZoom, 0.0) * 1.15;
+
+      vec2 uv = q + vec2(uYaw, uPitch) * 0.22;
+
+      float warpStrength = 0.68 + 0.20 * sin(nebulaTravel * 0.08);
+      float density = 0.70 + 0.13 * sin(nebulaTravel * 0.07 + 1.0);
+
+      // Overall zoom always keeps travelling outward.
+      float baseZoom = exp(nebulaTravel * 0.016);
+
+      // Subtle scale variation without reversing the sense of travel.
+      float zoomVariation =
+          1.0
+        + 0.12 * sin(nebulaTravel * 0.11)
+        + 0.055 * sin(nebulaTravel * 0.037 + 1.8);
+
+      float detailVariation =
+          1.0
+        + 0.13 * sin(nebulaTravel * 0.055 + 2.2);
+
+      float detail = 1.65 * detailVariation;
+
+      float radius = length(uv);
+      vec2 centerDir = uv / max(radius, 0.0001);
+
+      vec2 p = uv * detail * baseZoom * zoomVariation;
+
+      // Pure radial travel: no diagonal drift.
+      float radialWarp = 0.08 + 0.025 * sin(nebulaTravel * 0.045);
+      p -= centerDir * radialWarp * smoothstep(0.0, 1.35, radius);
+
+      // A tiny organic twist so the cloud feels alive.
+      float swirlAmt = 0.055 * sin(nebulaTravel * 0.035 + radius * 1.6);
+      mat2 swirl = mat2(cos(swirlAmt), -sin(swirlAmt), sin(swirlAmt), cos(swirlAmt));
+      p = swirl * p;
+
+      vec2 qWarp;
+      qWarp.x = fbm(p + vec2(0.0, 0.0) + uTime * 0.010);
+      qWarp.y = fbm(p + vec2(5.2, 1.3) - uTime * 0.009);
+
+      vec2 rWarp;
+      rWarp.x = fbm(p + 4.0 * warpStrength * qWarp + vec2(1.7, 9.2));
+      rWarp.y = fbm(p + 4.0 * warpStrength * qWarp + vec2(8.3, 2.8));
+
+      float cloud = fbm(p + 4.7 * rWarp);
+      float ridgesN = ridged(p * 1.30 - 1.85 * rWarp);
+      float wisps = fbm(p * 2.30 + rWarp * 4.0);
+
+      float radialMask = exp(-0.34 * radius * radius);
+      float body = smoothstep(0.29, 0.81, cloud * density + ridgesN * 0.34 + radialMask * 0.14);
+      float filament = pow(max(0.0, ridgesN - 0.26), 1.65);
+      float mist = smoothstep(0.24, 0.72, wisps) * 0.48;
+
+      float colorT = cloud * 0.68 + ridgesN * 0.50 + nebulaTravel * 0.022 + radialMask * 0.08;
+      vec3 nebula = nebulaPalette(colorT, nebulaTravel);
+
+      float vignette = exp(-0.18 * dot(uv, uv));
+      vec3 color = vec3(0.003, 0.005, 0.011);
+      color += nebula * body * 1.16;
+      color += nebula.yzx * filament * 0.30;
+      color += nebula.zxy * mist * 0.20;
+      color *= vignette;
+
+      color *= 0.98 + 0.045 * sin(nebulaTravel * 0.065 + cloud * 1.4);
+
+      float starZoom = 1.0 + nebulaTravel * 0.0016;
+      color += nebulaStars(uv * starZoom, nebulaTravel);
+
+      float glow = exp(-1.8 * dot(uv, uv));
+      color += vec3(0.045, 0.035, 0.09) * glow * 0.55;
+
+      // Tone-map
+      color = 1.0 - exp(-color * 1.35);
+      color = pow(color, vec3(0.92));
+
+      return color;
+    }
+
+    vec3 perspectiveDir(vec2 q, float viewDeg){
+      float halfFov = radians(min(viewDeg, 165.0)) * 0.5;
+      float t = tan(halfFov);
+      return normalize(vec3(q.x * t, q.y * t, -1.0));
+    }
+
+    vec3 bubbleSurfaceColor(vec2 local, float seedA, float seedB, float layerMix){
+      float d = length(local);
+      float rn = min(d, 1.0);
+      float az = atan(local.y, local.x);
+
+      float wob = 0.0065;
+      float theta = rn * PI;
+      theta *= 1.0 + wob * (0.35 * sin(uTime * 0.9 + seedA * 6.2831));
+
+      float st = sin(theta);
+      vec3 dir = normalize(vec3(
+        st * cos(az),
+        st * sin(az),
+        -cos(theta)
+      ));
+
+      float idYaw = (seedA - 0.5) * 6.28318;
+      float idPitch = (seedB - 0.5) * 1.0;
+
+      dir = rotateX(dir, uPitch * (0.50 + layerMix * 0.08) + idPitch);
+      dir = rotateY(dir, uYaw * (0.95 + layerMix * 0.06) + idYaw);
+
+      vec3 pano = panoColorFromDir(dir);
+      pano = applyRim(pano, rn, 1.0);
+
+      float glow = pow(max(0.0, 1.0 - abs(d - 1.0) / 0.08), 2.2);
+      vec3 ring = vec3(1.0) * glow * 0.24;
+      return pano + ring;
+    }
+
+    vec3 singleBubbleColor(vec2 q){
+      vec3 dir;
+      float circleRadius = 999.0;
+      float wobbleAmt = 0.0;
+      bool bubble = false;
+
+      if (uViewDeg <= 145.0) {
+        dir = perspectiveDir(q, uViewDeg);
+      } else {
+        bubble = true;
+        float aspect = uResolution.x / max(uResolution.y, 1.0);
+        float coverRadius = length(vec2(aspect, 1.0));
+
+        if (uViewDeg <= 360.0) {
+          float t = smoothstep(145.0, 360.0, uViewDeg);
+          circleRadius = mix(coverRadius, 1.0, t);
+        } else {
+          circleRadius = 360.0 / uViewDeg;
+        }
+
+        float wobbleBlend = smoothstep(220.0, 420.0, uViewDeg);
+        wobbleAmt = 0.012 * wobbleBlend;
+
+        float bubblePulse = 1.0 + wobbleAmt * (0.50 * sin(uTime * 0.82) + 0.35 * sin(uTime * 1.11));
+        circleRadius *= bubblePulse;
+
+        float r = length(q);
+        float rn = min(r / max(circleRadius, 0.0001), 1.0);
+        float az = atan(q.y, q.x);
+        float ripple = sin(az * 3.0 - uTime * 1.05);
+        float pulse  = sin(uTime * 0.82);
+        float theta  = rn * PI;
+        theta *= 1.0 + wobbleAmt * (0.22 * pulse + 0.18 * ripple) * (1.0 - rn * 0.4);
+
+        float st = sin(theta);
+        vec3 fish = normalize(vec3(
+          st * cos(az),
+          st * sin(az),
+          -cos(theta)
+        ));
+
+        if (uViewDeg < 175.0) {
+          vec3 persp = perspectiveDir(q, uViewDeg);
+          float blend = smoothstep(145.0, 175.0, uViewDeg);
+          dir = normalize(mix(persp, fish, blend));
+          bubble = false;
+        } else {
+          dir = fish;
+        }
+      }
+
+      dir = rotateX(dir, uPitch);
+      dir = rotateY(dir, uYaw);
+      vec3 pano = panoColorFromDir(dir);
+
+      if (bubble) {
+        float r = length(q);
+        float rn = min(r / max(circleRadius, 0.0001), 1.0);
+        float feather = 0.008;
+        float mask = 1.0 - smoothstep(circleRadius - feather, circleRadius + feather, r);
+
+        vec3 bg = bgColor(q, circleRadius);
+
+        float glow = smoothstep(circleRadius + 0.06, circleRadius - 0.01, r);
+        vec3 ring = vec3(1.0) * pow(max(0.0, 1.0 - abs(r - circleRadius) / 0.06), 2.2) * 0.22;
+
+        pano = applyRim(pano, rn, mask);
+        return mix(bg, pano + ring * mask + ring * 0.25 * glow, mask);
+      }
+
+      return pano;
+    }
+
+    vec4 renderCarryBubble(vec2 q){
+      // Transitional original bubble:
+      // show it only briefly when entering parallax mode, then remove it.
+      float shrinkT = smoothstep(0.0, 4.0, uDeepZoom);
+      float vanishT = 1.0 - smoothstep(0.65, 1.8, uDeepZoom);
+
+      if (vanishT <= 0.001) return vec4(0.0);
+
+      vec2 center = vec2(0.0) + vec2(uYaw, uPitch) * 0.05;
+      float radius = mix(0.50, 0.04, shrinkT);
+
+      vec2 local = (q - center) / radius;
+      float d = length(local);
+      if (d > 1.05) return vec4(0.0);
+
+      vec3 col = bubbleSurfaceColor(local, 0.17, 0.61, 0.0);
+      float feather = 0.03;
+      float alpha = 1.0 - smoothstep(1.0 - feather, 1.0 + feather, d);
+
+      // Fade it out quickly a few scrolls into parallax mode.
+      alpha *= vanishT;
+      return vec4(col * alpha, alpha);
+    }
+
+    vec4 renderWaveLayer(vec2 q, float aspect, float waveId, float layerIdx, float localT){
+      // Cleaner hyperspace flow:
+      // - fewer simultaneous planets
+      // - more frequent but staggered appearances
+      // - motion is mostly straight toward center
+      // - consistent shrink all the way down
+
+      int count = 1;
+      // Keep only a single bubble per layer to avoid visible overlaps/patterns.
+
+      // Keep the inward target near center with only a little variety.
+      vec2 vanish = vec2(
+        (hash21(vec2(waveId, 1.3)) - 0.5) * 0.12,
+        (hash21(vec2(waveId, 2.7)) - 0.5) * 0.10
+      );
+
+      float parallax = 0.05 + layerIdx * 0.06;
+      vec4 accum = vec4(0.0);
+
+      for (int k = 0; k < 2; k++) {
+        if (k >= count) continue;
+
+        vec2 seed = vec2(waveId * 17.0 + float(k) * 3.11, layerIdx * 29.1 + 7.7);
+
+        // Stagger inside the wave so we don't get shotgun bursts.
+        float spawnStart = 0.08 + float(k) * 0.34 + layerIdx * 0.10;
+        float spawnDur = 0.72;
+        float t = (localT - spawnStart) / spawnDur;
+        if (t <= 0.0 || t >= 1.0) continue;
+
+        float e = easeInOut(t);
+
+        // Mostly radial toward the center.
+        vec2 dir = hash22(seed) - 0.5;
+        dir.x *= aspect;
+        dir = normalize(dir);
+
+        float lane = mix(0.55, 1.00, hash21(seed + 4.0));
+
+        float startDist = mix(3.0, 4.3, hash21(seed + 5.0));
+        // End near center-ish, but not always dead center.
+        float endDist = mix(0.18, 0.65, hash21(seed + 6.0)) * lane;
+
+        float dist = mix(startDist, endDist, e);
+
+        // Very small sideways offset; keep it subtle all the way.
+        vec2 perp = vec2(-dir.y, dir.x);
+        float side = (hash21(seed + 9.0) - 0.5) * 0.12;
+
+        vec2 pos = vanish + dir * dist + perp * side;
+        pos += vec2(uYaw, uPitch) * parallax;
+
+        float rr = hash21(seed + 6.8);
+        float baseR;
+        if (layerIdx < 0.5) {
+          baseR = mix(0.25, 0.42, rr);
+        } else if (layerIdx < 1.5) {
+          baseR = mix(0.16, 0.28, rr);
+        } else {
+          baseR = mix(0.09, 0.16, rr);
+        }
+
+        // Start very large and shrink consistently to almost nothing.
+        float radius = mix(baseR * 10.0, baseR * 0.02, e);
+
+        vec2 local = (q - pos) / radius;
+        float d = length(local);
+        if (d > 1.03) continue;
+
+        vec3 col = bubbleSurfaceColor(local, hash21(seed + 11.0), hash21(seed + 15.0), layerIdx);
+
+        // Foreground bubble mask.
+        // The bubble is fully opaque inside; only the outer 1% edge is anti-aliased.
+        // No wave/layer transparency, so the nebula can NEVER show through the bubble.
+        float feather = 0.010;
+        float alpha = 1.0 - smoothstep(0.990, 1.000, d);
+
+        // True foreground overwrite:
+        // if this pixel belongs to a bubble, take that bubble color only.
+        // Never blend two bubbles together.
+        if (alpha > accum.a) {
+          accum.rgb = col;
+          accum.a = alpha;
+        }
+      }
+
+      return accum;
+    }
+
+    vec3 infiniteBubblesColor(vec2 q){
+      float aspect = uResolution.x / max(uResolution.y, 1.0);
+
+      // Nebula is BACKGROUND, not foreground.
+      // It starts almost invisible and fades in gradually as we go deeper.
+      vec3 starBackground = starBg(q * 0.9);
+      vec3 nebulaBackground = nebulaHyperspaceColor(q);
+
+      // Start the nebula fade as soon as deep/parallax mode begins.
+      // It still comes in gently, but there is no long empty gap after 720°.
+      float nebulaFade = smoothstep(0.0, 6.5, uDeepZoom);
+
+      // Keep some stars visible through the nebula, but tone the nebula down
+      // slightly so the foreground planets stay crisp and never look "burned in".
+      vec3 nebulaLayer = nebulaBackground * 0.72 + starBackground * 0.26;
+      vec3 bg = mix(starBackground, nebulaLayer, nebulaFade);
+
+      // A tiny lift during the first few scrolls keeps the transition alive.
+      bg += nebulaBackground * (0.05 * (1.0 - nebulaFade) * smoothstep(0.0, 1.2, uDeepZoom));
+
+      // More frequent waves, but each one is much sparser and staggered.
+      float waveFloat = uDeepZoom * 0.22;
+      float currentWave = floor(waveFloat);
+
+      vec3 color = bg;
+
+      vec4 carry = renderCarryBubble(q);
+      color = mix(color, carry.rgb, carry.a);
+
+      // Keep enough overlap to avoid gaps, but reduce cross-wave collisions.
+      for (int p = -1; p <= 2; p++) {
+        float waveId = currentWave + float(p);
+        float localT = waveFloat - waveId;
+        if (localT < 0.0 || localT > 1.0) continue;
+
+        vec4 farL  = renderWaveLayer(q, aspect, waveId, 2.0, localT);
+        vec4 midL  = renderWaveLayer(q, aspect, waveId, 1.0, localT);
+        vec4 nearL = renderWaveLayer(q, aspect, waveId, 0.0, localT);
+
+        // Strict layer priority with NO blending between bubbles.
+        // Near bubbles fully override mid/far/background.
+        if (farL.a > 0.0)  color = farL.rgb;
+        if (midL.a > 0.0)  color = midL.rgb;
+        if (nearL.a > 0.0) color = nearL.rgb;
+      }
+
+      return color;
+    }
+
+    void main(){
+      float aspect = uResolution.x / max(uResolution.y, 1.0);
+      vec2 q = vec2(vPos.x * aspect, vPos.y);
+
+      vec3 color;
+      if (uDeepZoom > 0.001) {
+        // Parallax planets always stay in the foreground.
+        // Nebula is handled inside infiniteBubblesColor() as the background layer.
+        color = infiniteBubblesColor(q);
+      } else {
+        color = singleBubbleColor(q);
+      }
+
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `;
+
+  function shader(type, src){
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+      throw new Error(gl.getShaderInfoLog(s));
+    }
+    return s;
+  }
+
+  let program;
+  try{
+    program = gl.createProgram();
+    gl.attachShader(program, shader(gl.VERTEX_SHADER, vs));
+    gl.attachShader(program, shader(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(program);
+    if(!gl.getProgramParameter(program, gl.LINK_STATUS)){
+      throw new Error(gl.getProgramInfoLog(program));
+    }
+  }catch(e){
+    fail('Viewer shader failed: ' + e.message);
+    return;
+  }
+
+  gl.useProgram(program);
+
+  const quad = new Float32Array([
+    -1,-1,  1,-1, -1, 1,
+    -1, 1,  1,-1,  1, 1
+  ]);
+
+  const vb = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+  gl.bufferData(gl.ARRAY_BUFFER, quad, gl.STATIC_DRAW);
+
+  const aPos = gl.getAttribLocation(program, 'aPos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  const uResolution = gl.getUniformLocation(program, 'uResolution');
+  const uYaw = gl.getUniformLocation(program, 'uYaw');
+  const uPitch = gl.getUniformLocation(program, 'uPitch');
+  const uViewDeg = gl.getUniformLocation(program, 'uViewDeg');
+  const uDeepZoom = gl.getUniformLocation(program, 'uDeepZoom');
+  const uTime = gl.getUniformLocation(program, 'uTime');
+
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([32,32,32,255]));
+
+  let yaw = 0;
+  let pitch = 0;
+  let viewDeg = 90;
+  let deepZoom = 0;
+
+  const MIN_VIEW = 20;
+  const MAX_VIEW = 720;
+  const MAX_DEEP_ZOOM = 50;
+
+  let dragging = false, sx = 0, sy = 0, syaw = 0, spitch = 0;
+  let lastFrameMs = performance.now();
+  let startMs = performance.now();
+  let lastInteractionMs = performance.now();
+
+  function noteInteraction(){
+    lastInteractionMs = performance.now();
+  }
+
+  function resize(){
+    const dpr = Math.min(devicePixelRatio || 1, 3);
+    const w = Math.max(1, Math.floor(innerWidth * dpr));
+    const h = Math.max(1, Math.floor(innerHeight * dpr));
+    if(canvas.width !== w || canvas.height !== h){
+      canvas.width = w;
+      canvas.height = h;
+    }
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+
+  function modeName(){
+    if (deepZoom > 6.5) return 'Hyperspace + nebula';
+    if (deepZoom > 0.001) return 'Hyperspace + nebula fade';
+    if (viewDeg <= 145) return 'Perspective';
+    if (viewDeg < 175) return 'Morphing';
+    if (viewDeg <= 360) return 'Spherical';
+    return 'Whole sphere';
+  }
+
+  function render(nowMs){
+    resize();
+
+    const dt = Math.min(50, nowMs - lastFrameMs);
+    lastFrameMs = nowMs;
+
+    const bubbleMode = viewDeg > 175 || deepZoom > 0.001;
+    const idleMs = nowMs - lastInteractionMs;
+
+    if (bubbleMode && !dragging && idleMs > 2000) {
+      const ramp = Math.min(1, (idleMs - 2000) / 2200);
+      yaw += dt * 0.000018 * ramp;
+    }
+
+    gl.uniform2f(uResolution, canvas.width, canvas.height);
+    gl.uniform1f(uYaw, yaw);
+    gl.uniform1f(uPitch, pitch);
+    gl.uniform1f(uViewDeg, viewDeg);
+    gl.uniform1f(uDeepZoom, deepZoom);
+    gl.uniform1f(uTime, (nowMs - startMs) * 0.001);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    let label = 'View: ' + Math.round(viewDeg) + '°';
+    if (deepZoom > 0.001) label += ' · Travel+' + deepZoom.toFixed(2);
+    label += ' · ' + modeName();
+    if (bubbleMode && idleMs > 2000) label += ' · Auto drift';
+    readout.textContent = label;
+
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+
+  function isPowerOfTwo(x){
+    return (x & (x - 1)) === 0;
+  }
+
+  function prevPowerOfTwo(x){
+    return Math.pow(2, Math.floor(Math.log2(Math.max(1, x))));
+  }
+
+  function enableAniso(){
+    const ext =
+      gl.getExtension('EXT_texture_filter_anisotropic') ||
+      gl.getExtension('MOZ_EXT_texture_filter_anisotropic') ||
+      gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
+
+    if(ext){
+      const max = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+      gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, Math.max(1, max));
+    }
+  }
+
+  function uploadPanorama(img){
+    const maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    let source = img;
+    let w = img.width;
+    let h = img.height;
+
+    if(!isPowerOfTwo(w) || !isPowerOfTwo(h) || w > maxTex || h > maxTex){
+      const potW = Math.min(prevPowerOfTwo(Math.min(w, maxTex)), maxTex);
+      const potH = Math.min(prevPowerOfTwo(Math.min(h, maxTex)), maxTex);
+
+      const off = document.createElement('canvas');
+      off.width = Math.max(1, potW);
+      off.height = Math.max(1, potH);
+      const ctx = off.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, off.width, off.height);
+      source = off;
+    }
+
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    gl.generateMipmap(gl.TEXTURE_2D);
+    enableAniso();
+  }
+
+  function loadFile(file){
+    if(!file) return;
+
+    if(!(file.type.startsWith('image/') || /\.(jpe?g|png|webp)$/i.test(file.name))){
+      fail('Please choose a JPG, PNG, or WebP image.');
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      try{
+        uploadPanorama(img);
+        yaw = 0;
+        pitch = 0;
+        viewDeg = 90;
+        deepZoom = 0;
+        noteInteraction();
+      }catch(err){
+        fail('Texture upload failed: ' + err.message);
+      }
+      URL.revokeObjectURL(url);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      fail('Could not load that image.');
+    };
+
+    img.src = url;
+  }
+
+  fileInput.addEventListener('change', e => {
+    loadFile(e.target.files && e.target.files[0]);
+    fileInput.value = '';
+  });
+
+  addEventListener('dragover', e => e.preventDefault());
+  addEventListener('drop', e => {
+    e.preventDefault();
+    noteInteraction();
+    loadFile(e.dataTransfer.files && e.dataTransfer.files[0]);
+  });
+
+  canvas.addEventListener('pointerdown', e => {
+    noteInteraction();
+    dragging = true;
+    sx = e.clientX; sy = e.clientY;
+    syaw = yaw; spitch = pitch;
+    canvas.setPointerCapture(e.pointerId);
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    if(!dragging) return;
+    noteInteraction();
+    yaw = syaw + (e.clientX - sx) * 0.005;
+    pitch = spitch - (e.clientY - sy) * 0.005;
+  });
+
+  canvas.addEventListener('pointerup', e => {
+    noteInteraction();
+    dragging = false;
+    try{canvas.releasePointerCapture(e.pointerId)}catch(_){}
+  });
+
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    noteInteraction();
+    const step = e.deltaY * 0.0015;
+
+    if (step > 0) {
+      if (deepZoom > 0.001 || viewDeg >= MAX_VIEW - 0.5) {
+        deepZoom = Math.min(MAX_DEEP_ZOOM, Math.max(0, deepZoom + step));
+        viewDeg = MAX_VIEW;
+      } else {
+        viewDeg = Math.min(MAX_VIEW, viewDeg * Math.exp(step));
+      }
+    } else {
+      if (deepZoom > 0.001) {
+        deepZoom = Math.max(0, deepZoom + step);
+      } else {
+        viewDeg = Math.max(MIN_VIEW, viewDeg * Math.exp(step));
+      }
+    }
+  }, {passive:false});
+
+  canvas.addEventListener('dblclick', () => {
+    noteInteraction();
+    fileInput.click();
+  });
+})();
+</script>
+</body>
+</html>
